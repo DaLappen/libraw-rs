@@ -1,139 +1,120 @@
-use std::error::Error as StdError;
-use std::ffi::CStr;
-use std::fmt;
-use std::result::Result as StdResult;
+use core::fmt;
+use std::{error::Error, ffi::CStr};
 
-use libc::{c_int};
+use libc::c_int;
+use libraw_sys::LIBRAW_SUCCESS;
 
-/// Result type returned by libraw functions.
-pub type Result<T> = StdResult<T, Error>;
+// /// The error type for libraw functions.
+// #[derive(Debug)]
+// pub struct LibrawError {
+//     repr: Repr,
+//     message: String,
+// }
 
-/// The error type for libraw functions.
+// #[derive(Debug)]
+// enum Repr {
+//     LibRaw(c_int),
+//     Os(i32),
+// }
+
+// impl fmt::Display for LibrawError {
+//     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+//         fmt.write_str(&self.message)
+//     }
+// }
+
+// impl Error for LibrawError {
+//     fn description(&self) -> &str {
+//         &self.message
+//     }
+// }
+
+// #[doc(hidden)]
+// pub fn from_libraw(error: c_int) -> LibrawError {
+//     let message = String::from_utf8_lossy(
+//         unsafe { CStr::from_ptr(libraw_sys::libraw_strerror(error)) }.to_bytes(),
+//     )
+//     .into_owned();
+
+//     LibrawError {
+//         repr: Repr::LibRaw(error),
+//         message: message,
+//     }
+// }
+
+// pub fn from_raw_os_error(errno: i32) -> LibrawError {
+//     LibrawError {
+//         repr: Repr::Os(errno),
+//         message: os::error_string(errno),
+//     }
+// }
+
+// Libraw returns error codes
+// e.g. let ret = libraw_open_file(...) -> c_int
+// if ret == 0 or. LIBRAW_SUCCESS -> no error
+// if ret > 0 -> error in system call -> is errno
+// if ret < 0 -> LibRaw error
+
+// LibRaw error types:
+// - Non-fatal errors
+// - Fatal errors
+// --> Check by LIBRAW_FATAL_ERROR(err)
+
 #[derive(Debug)]
-pub struct Error {
-    repr: Repr,
-    message: String,
+pub enum LibrawError {
+    SysCallErr(String),
+    LibRawErr(String),
+    Err(String),
 }
 
-#[derive(Debug)]
-enum Repr {
-    LibRaw(c_int),
-    Os(i32),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> StdResult<(), fmt::Error> {
-        fmt.write_str(&self.message)
-    }
-}
-
-impl StdError for Error {
-    fn description(&self) -> &str {
-        &self.message
-    }
-}
-
-#[doc(hidden)]
-pub fn from_libraw(error: c_int) -> Error {
-    let message = String::from_utf8_lossy(unsafe {
-        CStr::from_ptr(::libraw::libraw_strerror(error))
-    }.to_bytes()).into_owned();
-
-    Error {
-        repr: Repr::LibRaw(error),
-        message: message,
-    }
-}
-
-#[doc(hidden)]
-pub fn from_raw_os_error(errno: i32) -> Error {
-    Error {
-        repr: Repr::Os(errno),
-        message: os::error_string(errno),
-    }
-}
-
-
-// adapted from libstd
-pub mod os {
-    use std::ffi::CStr;
-    use std::str;
-
-    use libc::{c_char,c_int,size_t};
-
-    const TMPBUF_SZ: usize = 128;
-
-    #[cfg(any(target_os = "macos",
-              target_os = "ios",
-              target_os = "freebsd"))]
-    unsafe fn errno_location() -> *mut c_int {
-        extern { fn __error() -> *mut c_int; }
-        __error()
-    }
-
-    #[cfg(target_os = "bitrig")]
-    fn errno_location() -> *mut c_int {
-        extern {
-            fn __errno() -> *mut c_int;
-        }
-        unsafe {
-            __errno()
-        }
-    }
-
-    #[cfg(target_os = "dragonfly")]
-    unsafe fn errno_location() -> *mut c_int {
-        extern { fn __dfly_error() -> *mut c_int; }
-        __dfly_error()
-    }
-
-    #[cfg(target_os = "openbsd")]
-    unsafe fn errno_location() -> *mut c_int {
-        extern { fn __errno() -> *mut c_int; }
-        __errno()
-    }
-
-    #[cfg(any(target_os = "linux", target_os = "android"))]
-    unsafe fn errno_location() -> *mut c_int {
-        extern { fn __errno_location() -> *mut c_int; }
-        __errno_location()
-    }
-
-    pub fn errno() -> i32 {
-        unsafe {
-            (*errno_location()) as i32
-        }
-    }
-
-    pub fn clear_errno() {
-        unsafe {
-            (*errno_location()) = 0;
-        }
-    }
-
-    pub fn error_string(errno: i32) -> String {
-        #[cfg(target_os = "linux")]
-        extern {
-            #[link_name = "__xpg_strerror_r"]
-            fn strerror_r(errnum: c_int, buf: *mut c_char,
-                          buflen: size_t) -> c_int;
-        }
-        #[cfg(not(target_os = "linux"))]
-        extern {
-            fn strerror_r(errnum: c_int, buf: *mut c_char,
-                          buflen: size_t) -> c_int;
-        }
-
-        let mut buf = [0 as c_char; TMPBUF_SZ];
-
-        let p = buf.as_mut_ptr();
-        unsafe {
-            if strerror_r(errno as c_int, p, buf.len() as size_t) < 0 {
-                panic!("strerror_r failure");
+impl Error for LibrawError {}
+impl fmt::Display for LibrawError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::SysCallErr(err_msg) => {
+                write!(f, "SysCall made by LibRaw resulted in error: {:?}", err_msg)
             }
-
-            let p = p as *const _;
-            str::from_utf8(CStr::from_ptr(p).to_bytes()).unwrap().to_string()
+            Self::LibRawErr(err_msg) => {
+                write!(f, "Libraw fn call resulted in error: {:?}", err_msg)
+            }
+            Self::Err(err_msg) => {
+                write!(f, "Failed with error: {:?}", err_msg)
+            }
+        }
+    }
+}
+pub type LibrawResult<T> = Result<T, LibrawError>;
+impl LibrawError {
+    pub fn handle_libraw_return(err: c_int) -> Result<(), Self> {
+        use std::str;
+        if err == LIBRAW_SUCCESS {
+            Ok(())
+        } else if err < 0 {
+            Err(Self::LibRawErr(Self::from_libraw(err)))
+        } else {
+            let err_msg = unsafe {
+                str::from_utf8(CStr::from_ptr(libc::strerror(err)).to_bytes())
+                    .unwrap()
+                    .to_string()
+            };
+            Err(Self::SysCallErr(err_msg))
+        }
+    }
+    fn from_libraw(error: c_int) -> String {
+        let message = String::from_utf8_lossy(
+            unsafe { CStr::from_ptr(libraw_sys::libraw_strerror(error)) }.to_bytes(),
+        )
+        .into_owned();
+        message
+    }
+    pub fn from_str<S: AsRef<str>>(err_msg: S) -> Self {
+        Self::Err(format!("{}", err_msg.as_ref()))
+    }
+    pub fn at<S: AsRef<str>>(self, at: S) -> Self {
+        match self {
+            Self::Err(e) => Self::Err(e + " at " + at.as_ref()),
+            Self::LibRawErr(e) => Self::LibRawErr(e + " at " + at.as_ref()),
+            Self::SysCallErr(e) => Self::SysCallErr(e + " at " + at.as_ref()),
         }
     }
 }

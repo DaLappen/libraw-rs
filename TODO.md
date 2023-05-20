@@ -1,0 +1,61 @@
+# Implemented libraw-sys functions
+
+- [x] libraw_version  
+- [x] libraw_versionNumber   
+- [x] libraw_capabilities  
+- [x] libraw_cameraList  
+- [x] libraw_cameraCount  
+
+implemented on libraw_data:  
+- [x] libraw_init -> new()  
+- [x] libraw_close -> drop(libraw_data)  
+- [x] libraw_subtract_black  
+- [x] libraw_open_file -> load_image_from_path()  
+- [ ] libraw_open_file_ex  
+- [ ] libraw_open_buffer  
+- [ ] libraw_open_bayer  
+- [x] libraw_unpack -> unpack()  
+- [x] libraw_unpack_thumb -> unpack_thumb()  
+- [ ] libraw_unpack_thumb_ex  
+- [ ] libraw_recycle_datastream  
+- [x] libraw_recycle -> recycle()  
+- [ ] libraw_adjust_sizes_info_only  
+- [x] libraw_dcraw_ppm_tiff_writer -> dcraw_write_to_tiff() <---- might need restructure  
+- [x] libraw_dcraw_thumb_writer -> dcraw_write_thumb_to_tiff() <---- might need restructure  
+- [x] libraw_dcraw_process  
+- [x] libraw_dcraw_make_mem_image -> dcraw_make_mem_image()  
+- [x] libraw_dcraw_clear_mem  
+- [ ] libraw_dcraw_make_mem_thumb  
+- [x] libraw_raw2image -> raw2image()  
+- [ ] libraw_free_image  
+- [x] libraw_get_decoder_info  
+- [ ] libraw_COLOR  
+- [ ] libraw_set_demosaic  
+- [ ] libraw_set_output_color  
+- [ ] libraw_set_output_bps  
+- [ ] libraw_set_gamma  
+- [ ] libraw_set_no_auto_bright  
+- [ ] libraw_set_bright  
+- [ ] libraw_set_highlight  
+- [ ] libraw_set_fbdd_noiserd  
+- [ ] libraw_set_output_tiff    
+- [ ] libraw_get_raw_height  
+- [ ] libraw_get_raw_width  
+- [ ] libraw_get_iheight  
+- [ ] libraw_get_iwidth  
+- [ ] libraw_get_iparams  
+- [ ] libraw_get_lensinfo  
+- [ ] libraw_get_imgother  
+- [ ] libraw_get_cam_mul  
+- [ ] libraw_get_pre_mul  
+- [ ] libraw_get_rgb_cam  
+- [ ] libraw_get_color_maximum  
+
+Not needed/ too hard to implement:   
+- [ ] libraw_strprogress  
+- [ ] libraw_strerror  
+- [ ] libraw_unpack_function_name  
+- [ ] libraw_set_exifparser_handler  
+- [ ] libraw_set_memerror_handler  
+- [ ] libraw_set_dataerror_handler  
+- [ ] libraw_set_progress_handler  
