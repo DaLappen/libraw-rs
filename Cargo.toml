@@ -1,12 +1,9 @@
 [package]
 name = "libraw"
 version = "0.2.0"
-authors = ["David Cuddeback <david.cuddeback@gmail.com>"]
+authors = ["DaLappen"]
 description = "Rust wrapper for libraw"
-homepage = "https://github.com/dcuddeback/libraw-rs"
-repository = "https://github.com/dcuddeback/libraw-rs"
-documentation = "http://dcuddeback.github.io/libraw-rs/libraw/"
-license = "MIT"
+repository = "https://github.com/DaLappen/libraw-sys"
 readme = "README.md"
 keywords = ["libraw", "raw", "camera", "image"]
 edition = "2021"
